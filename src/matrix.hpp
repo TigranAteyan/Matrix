@@ -3,6 +3,7 @@
 
 #include "BufferMatrix.hpp"
 #include <stdexcept>
+#include <utility> 
 
 template <typename T>
 class Matrix : private BufferMatrix<T>
@@ -17,41 +18,6 @@ public:
     Matrix(Matrix&& other) noexcept : BufferMatrix<T>(std::move(other)) {}
 
     ~Matrix() = default;
-
-    Matrix& operator=(const Matrix& other)
-    {
-        if (this != &other)
-        {
-            Clear();
-            this->rows = other.rows;
-            this->cols = other.cols;
-            this->buffer = new T*[this->cols];
-            for (int i = 0; i < this->cols; ++i)
-            {
-                this->buffer[i] = new T[this->rows];
-                for (int j = 0; j < this->rows; ++j)
-                {
-                    this->buffer[i][j] = other.buffer[i][j];
-                }
-            }
-        }
-        return *this;
-    }
-
-    Matrix& operator=(Matrix&& other) noexcept
-    {
-        if (this != &other)
-        {
-            Clear();
-            this->buffer = other.buffer;
-            this->cols = other.cols;
-            this->rows = other.rows;
-            other.buffer = nullptr;
-            other.cols = 0;
-            other.rows = 0;
-        }
-        return *this;
-    }
 
     void Set(int row, int col, const T& value)
     {
@@ -70,29 +36,6 @@ public:
     int RowCount() const { return this->rows; }
     int ColCount() const { return this->cols; }
 
-    void Resize(int newRows, int newCols)
-    {
-        if (newRows < 0 || newCols < 0)
-            throw std::out_of_range("Negative size");
-
-        T** NewBuffer = new T*[newCols];
-        for (int i = 0; i < newCols; ++i)
-        {
-            NewBuffer[i] = new T[newRows];
-            for (int j = 0; j < newRows; ++j)
-            {
-                if (i < this->cols && j < this->rows)
-                    NewBuffer[i][j] = this->buffer[i][j];
-                else
-                    NewBuffer[i][j] = T();
-            }
-        }
-        Clear();
-        this->buffer = NewBuffer;
-        this->cols = newCols;
-        this->rows = newRows;
-    }
-
     void Clear()
     {
         for (int i = 0; i < this->cols; ++i)
@@ -101,44 +44,6 @@ public:
         this->buffer = nullptr;
         this->rows = 0;
         this->cols = 0;
-    }
-
-    void AddRow(const T* rowData)
-    {
-        T** NewBuffer = new T*[this->cols + 1];
-        for (int i = 0; i < this->cols; ++i)
-        {
-            NewBuffer[i] = new T[this->rows];
-            for (int j = 0; j < this->rows; ++j)
-                NewBuffer[i][j] = this->buffer[i][j];
-        }
-
-        NewBuffer[this->cols] = new T[this->rows];
-        for (int j = 0; j < this->rows; ++j)
-            NewBuffer[this->cols][j] = rowData[j];
-
-        Clear();
-        this->buffer = NewBuffer;
-        ++this->cols;
-    }
-
-    void RemoveRow(int colIndex)
-    {
-        if (colIndex < 0 || colIndex >= this->cols)
-            throw std::out_of_range("Index out of range");
-
-        T** NewBuffer = new T*[this->cols - 1];
-        for (int i = 0, ni = 0; i < this->cols; ++i)
-        {
-            if (i == colIndex) continue;
-            NewBuffer[ni] = new T[this->rows];
-            for (int j = 0; j < this->rows; ++j)
-                NewBuffer[ni][j] = this->buffer[i][j];
-            ++ni;
-        }
-        Clear();
-        this->buffer = NewBuffer;
-        --this->cols;
     }
 
     Matrix operator+(const Matrix& other) const
@@ -204,6 +109,33 @@ public:
             }
         }
         return result;
+    }
+
+    Matrix& operator=(const Matrix& other)
+    {
+        if (this != &other)
+        {
+            Matrix temp(other); 
+            std::swap(this->rows, temp.rows);
+            std::swap(this->cols, temp.cols);
+            std::swap(this->buffer, temp.buffer);
+        }
+        return *this;
+    }
+
+    Matrix& operator=(Matrix&& other) noexcept
+    {
+        if (this != &other)
+        {
+            Clear();
+            this->buffer = other.buffer;
+            this->cols = other.cols;
+            this->rows = other.rows;
+            other.buffer = nullptr;
+            other.cols = 0;
+            other.rows = 0;
+        }
+        return *this;
     }
 
     bool IsEmpty() const
