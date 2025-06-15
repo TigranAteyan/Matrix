@@ -93,3 +93,37 @@ TEST(MatrixTest, MultiplyMatrixWithScalar)
     EXPECT_EQ(b.Get(1, 0), 6);
     EXPECT_EQ(b.Get(1, 1), 8);
 }
+
+TEST(MatrixTest, EqualityOperatorReturnsTrueForEqualMatrices)
+{
+    Matrix<int> a(2, 3);
+    Matrix<int> b(2, 3);
+    
+    a.Fill(5);
+    b.Fill(5);
+    
+    EXPECT_TRUE(a == b);
+    EXPECT_FALSE(a != b);
+}
+
+TEST(MatrixTest, EqualityOperatorReturnsFalseForDifferentSizes)
+{
+    Matrix<int> a(2, 3);
+    Matrix<int> b(3, 2);
+    
+    EXPECT_FALSE(a == b);
+    EXPECT_TRUE(a != b);
+}
+
+TEST(MatrixTest, EqualityOperatorReturnsFalseForDifferentElements)
+{
+    Matrix<int> a(2, 2);
+    Matrix<int> b(2, 2);
+    
+    a.Fill(1);
+    b.Fill(1);
+    b.Set(1, 1, 2);  
+    
+    EXPECT_FALSE(a == b);
+    EXPECT_TRUE(a != b);
+}
