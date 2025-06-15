@@ -138,6 +138,36 @@ public:
         return *this;
     }
 
+    bool operator==(const Matrix& other) const
+    {
+        if(this->rows != other.rows || this->cols != other.cols)
+            return false;
+        for(int i = 0; i < this->cols; ++i)
+        {
+            for(int j = 0; j < this->rows; ++j)
+            {
+                if(this->buffer[i][j] != other.buffer[i][j])
+                    return false;
+            }
+        }
+        return true;
+    }
+
+    bool operator!=(const Matrix& other) const
+    {
+        if(this->rows != other.rows || this->cols != other.cols)
+            return true;
+        for(int i = 0; i < this->cols; ++i)
+        {
+            for(int j = 0; j < this->rows; ++j)
+            {
+                if (this->buffer[i][j] != other.buffer[i][j])
+                    return true;
+            }
+        }
+        return false;
+    }
+
     bool IsEmpty() const
     {
         return this->cols == 0 || this->rows == 0 || this->buffer == nullptr;
