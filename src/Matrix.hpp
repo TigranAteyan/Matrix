@@ -7,6 +7,39 @@
 template <typename T>
 class Matrix : private BufferMatrix<T>
 {
+private:
+    class RowProxy {
+    private:
+        T* data;
+        int maxRow;
+    public:
+        RowProxy(T* rowData, int rowCount) : data(rowData), maxRow(rowCount) {}
+
+        T& operator[](int row) {
+            if (row < 0 || row >= maxRow)
+                throw std::out_of_range("Invalid row index");
+            return data[row];
+        }
+    };
+
+    class ConstRowProxy 
+    {
+    private:
+        const T* data;
+        int maxRow;
+    
+    public:
+        ConstRowProxy(const T* rowData, int rowCount) : data(rowData), maxRow(rowCount) {}
+
+        const T& operator[](int row) const {
+            if (row < 0 || row >= maxRow)
+                throw std::out_of_range("Invalid row index");
+            return data[row];
+        }
+    };
+    
+
+
 public:
     Matrix() : BufferMatrix<T>() {}
 
@@ -187,6 +220,20 @@ public:
             }
         }
         return result;
+    }
+
+    RowProxy operator[](int col)
+    {
+        if (col < 0 || col >= cols)
+            throw std::out_of_range("Invalid column index");
+        return RowProxy(buffer[col], rows);
+    }
+
+    ConstRowProxy operator[](int col) const
+    {
+        if (col < 0 || col >= cols)
+            throw std::out_of_range("Invalid column index");
+        return ConstRowProxy(buffer[col], rows);
     }
 
     bool IsEmpty() const
