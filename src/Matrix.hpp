@@ -38,8 +38,6 @@ private:
         }
     };
     
-
-
 public:
     Matrix() : BufferMatrix<T>() {}
 
@@ -92,66 +90,84 @@ public:
             throw std::out_of_range("Negative size");
 
         T** NewBuffer = new T*[newCols];
-        for (int i = 0; i < newCols; ++i)
-        {
-            NewBuffer[i] = new T[newRows];
-            for (int j = 0; j < newRows; ++j)
+        int i = 0;
+        try {
+            for (; i < newCols; ++i)
             {
-                if (i < this->cols && j < this->rows)
-                    NewBuffer[i][j] = this->buffer[i][j];
-                else
-                    NewBuffer[i][j] = T();
+                NewBuffer[i] = new T[newRows];
+                for (int j = 0; j < newRows; ++j)
+                {
+                    if (i < this->cols && j < this->rows)
+                        NewBuffer[i][j] = this->buffer[i][j];
+                    else
+                        NewBuffer[i][j] = T();
+                }
             }
+        } catch (...) {
+            for (int k = 0; k < i; ++k)
+                delete[] NewBuffer[k];
+            delete[] NewBuffer;
+            throw;
         }
+
         Clear();
         this->buffer = NewBuffer;
         this->cols = newCols;
         this->rows = newRows;
     }
 
-    void Clear()
-    {
-        for (int i = 0; i < this->cols; ++i)
-            delete[] this->buffer[i];
-        delete[] this->buffer;
-        this->buffer = nullptr;
-        this->rows = 0;
-        this->cols = 0;
-    }
-
-    void AddRow(const T* rowData)
+    void AddColumn(const T* colData)
     {
         T** NewBuffer = new T*[this->cols + 1];
-        for (int i = 0; i < this->cols; ++i)
-        {
-            NewBuffer[i] = new T[this->rows];
-            for (int j = 0; j < this->rows; ++j)
-                NewBuffer[i][j] = this->buffer[i][j];
-        }
+        int i = 0;
+        try {
+            for (; i < this->cols; ++i)
+            {
+                NewBuffer[i] = new T[this->rows];
+                for (int j = 0; j < this->rows; ++j)
+                    NewBuffer[i][j] = this->buffer[i][j];
+            }
 
-        NewBuffer[this->cols] = new T[this->rows];
-        for (int j = 0; j < this->rows; ++j)
-            NewBuffer[this->cols][j] = rowData[j];
+            NewBuffer[this->cols] = new T[this->rows];
+            for (int j = 0; j < this->rows; ++j)
+                NewBuffer[this->cols][j] = colData[j];
+        } catch (...) {
+            for (int k = 0; k < i; ++k)
+                delete[] NewBuffer[k];
+            delete[] NewBuffer;
+            throw;
+        }
 
         Clear();
         this->buffer = NewBuffer;
         ++this->cols;
     }
 
-    void RemoveRow(int colIndex)
+    void RemoveColumn(int colIndex)
     {
         if (colIndex < 0 || colIndex >= this->cols)
             throw std::out_of_range("Index out of range");
 
         T** NewBuffer = new T*[this->cols - 1];
-        for (int i = 0, ni = 0; i < this->cols; ++i)
-        {
-            if (i == colIndex) continue;
-            NewBuffer[ni] = new T[this->rows];
-            for (int j = 0; j < this->rows; ++j)
-                NewBuffer[ni][j] = this->buffer[i][j];
-            ++ni;
+        int ni = 0;
+        int i = 0;
+        try {
+            for (; i < this->cols; ++i)
+            {
+                if (i == colIndex) continue;
+
+                NewBuffer[ni] = new T[this->rows];
+                for (int j = 0; j < this->rows; ++j)
+                    NewBuffer[ni][j] = this->buffer[i][j];
+                ++ni;
+            }
+        } catch (...) {
+            for (int k = 0; k < ni; ++k)
+                delete[] NewBuffer[k];
+            delete[] NewBuffer;
+            throw;
         }
+
         Clear();
         this->buffer = NewBuffer;
         --this->cols;
@@ -163,11 +179,11 @@ public:
             throw std::invalid_argument("Matrix sizes must be equal");
 
         Matrix result(this->rows, this->cols);
-        for (int i = 0; i < this->cols; ++i)
+        for (int col = 0; col < this->cols; ++col)
         {
-            for (int j = 0; j < this->rows; ++j)
+            for (int row = 0; row < this->rows; ++row)
             {
-                result.buffer[i][j] = this->buffer[i][j] + other.buffer[i][j];
+                result.buffer[col][row] = this->buffer[col][row] + other.buffer[col][row];
             }
         }
         return result;
@@ -179,11 +195,11 @@ public:
             throw std::invalid_argument("Matrix sizes must be equal");
 
         Matrix result(this->rows, this->cols);
-        for (int i = 0; i < this->cols; ++i)
+        for (int col = 0; col < this->cols; ++col)
         {
-            for (int j = 0; j < this->rows; ++j)
+            for (int row = 0; row < this->rows; ++row)
             {
-                result.buffer[i][j] = this->buffer[i][j] - other.buffer[i][j];
+                result.buffer[col][row] = this->buffer[col][row] - other.buffer[col][row];
             }
         }
         return result;
@@ -195,14 +211,15 @@ public:
             throw std::invalid_argument("Matrix sizes not suitable for multiplication");
 
         Matrix result(this->rows, other.cols);
-        for (int i = 0; i < other.cols; ++i)
+
+        for (int col = 0; col < other.cols; ++col)
         {
-            for (int j = 0; j < this->rows; ++j)
+            for (int row = 0; row < this->rows; ++row)
             {
-                result.buffer[i][j] = T();
+                result.buffer[col][row] = T();
                 for (int k = 0; k < this->cols; ++k)
                 {
-                    result.buffer[i][j] += this->buffer[k][j] * other.buffer[i][k];
+                    result.buffer[col][row] += this->buffer[k][row] * other.buffer[col][k];
                 }
             }
         }
@@ -212,11 +229,11 @@ public:
     Matrix operator*(const T& scalar) const
     {
         Matrix result(this->rows, this->cols);
-        for (int i = 0; i < this->cols; ++i)
+        for (int col = 0; col < this->cols; ++col)
         {
-            for (int j = 0; j < this->rows; ++j)
+            for (int row = 0; row < this->rows; ++row)
             {
-                result.buffer[i][j] = this->buffer[i][j] * scalar;
+                result.buffer[col][row] = this->buffer[col][row] * scalar;
             }
         }
         return result;
@@ -224,16 +241,16 @@ public:
 
     RowProxy operator[](int col)
     {
-        if (col < 0 || col >= cols)
+        if (col < 0 || col >= this->cols)
             throw std::out_of_range("Invalid column index");
-        return RowProxy(buffer[col], rows);
+        return RowProxy(this->buffer[col], this->rows);
     }
 
     ConstRowProxy operator[](int col) const
     {
-        if (col < 0 || col >= cols)
+        if (col < 0 || col >= this->cols)
             throw std::out_of_range("Invalid column index");
-        return ConstRowProxy(buffer[col], rows);
+        return ConstRowProxy(this->buffer[col], this->rows);
     }
 
     bool IsEmpty() const
@@ -248,11 +265,11 @@ public:
 
     void Fill(const T& value)
     {
-        for (int i = 0; i < this->cols; ++i)
+        for (int col = 0; col < this->cols; ++col)
         {
-            for (int j = 0; j < this->rows; ++j)
+            for (int row = 0; row < this->rows; ++row)
             {
-                this->buffer[i][j] = value;
+                this->buffer[col][row] = value;
             }
         }
     }

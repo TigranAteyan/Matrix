@@ -1,6 +1,8 @@
 #ifndef BUFFERMATRIX_H
 #define BUFFERMATRIX_H
 
+#include <algorithm>
+
 template <typename T>
 class BufferMatrix
 {
@@ -14,34 +16,14 @@ public:
     BufferMatrix(int r, int c) : buffer(nullptr), rows(r), cols(c)
     {
         buffer = new T*[cols];
+        int i = 0;
         try {
-            for (int i = 0; i < cols; ++i) {
-                buffer[i] = new T[rows];
+            for (; i < cols; ++i) {
+                buffer[i] = new T[rows]();
             }
         } catch (...) {
-            for (int i = 0; i < cols; ++i) {
-                delete[] buffer[i];
-            }
-            delete[] buffer;
-            buffer = nullptr;
-            throw; 
-        }
-    }
-
-    BufferMatrix(const BufferMatrix& other)
-        : buffer(nullptr), rows(other.rows), cols(other.cols)
-    {
-        buffer = new T*[cols];
-        try {
-            for (int i = 0; i < cols; ++i) {
-                buffer[i] = new T[rows];
-                for (int j = 0; j < rows; ++j) {
-                    buffer[i][j] = other.buffer[i][j];
-                }
-            }
-        } catch (...) {
-            for (int i = 0; i < cols; ++i) {
-                delete[] buffer[i];
+            for (int j = 0; j < i; ++j) {
+                delete[] buffer[j];
             }
             delete[] buffer;
             buffer = nullptr;
@@ -49,6 +31,27 @@ public:
         }
     }
 
+    BufferMatrix(const BufferMatrix& other)
+        : buffer(nullptr), rows(other.rows), cols(other.cols)
+    {
+        buffer = new T*[cols];
+        int i = 0;
+        try {
+            for (; i < cols; ++i) {
+                buffer[i] = new T[rows];
+                for (int j = 0; j < rows; ++j) {
+                    buffer[i][j] = other.buffer[i][j];
+                }
+            }
+        } catch (...) {
+            for (int k = 0; k < i; ++k) {
+                delete[] buffer[k];
+            }
+            delete[] buffer;
+            buffer = nullptr;
+            throw;
+        }
+    }
 
     BufferMatrix(BufferMatrix&& other) noexcept
         : buffer(other.buffer), rows(other.rows), cols(other.cols)
@@ -62,7 +65,7 @@ public:
     {
         if (this != &other)
         {
-            BufferMatrix temp(other);  
+            BufferMatrix temp(other);
             std::swap(buffer, temp.buffer);
             std::swap(rows, temp.rows);
             std::swap(cols, temp.cols);
@@ -74,12 +77,7 @@ public:
     {
         if (this != &other)
         {
-            if (buffer)
-            {
-                for (int i = 0; i < cols; ++i)
-                    delete[] buffer[i];
-                delete[] buffer;
-            }
+            Clear();
 
             buffer = other.buffer;
             rows = other.rows;
@@ -94,17 +92,22 @@ public:
 
     ~BufferMatrix()
     {
+        Clear();
+    }
+
+protected:
+    void Clear()
+    {
         if (buffer)
         {
             for (int i = 0; i < cols; ++i)
-            {
                 delete[] buffer[i];
-            }
             delete[] buffer;
+            buffer = nullptr;
         }
+        rows = 0;
+        cols = 0;
     }
 };
-
-
 
 #endif
