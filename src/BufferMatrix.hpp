@@ -11,25 +11,44 @@ protected:
 public:
     BufferMatrix() : buffer(nullptr), rows(0), cols(0) {}
 
-    BufferMatrix(int r, int c) : rows(r), cols(c)
+    BufferMatrix(int r, int c) : buffer(nullptr), rows(r), cols(c)
     {
         buffer = new T*[cols];
-        for (int i = 0; i < cols; ++i)
-        {
-            buffer[i] = new T[rows];
+        try {
+            for (int i = 0; i < cols; ++i) {
+                buffer[i] = new T[rows];
+            }
+        } catch (...) {
+            for (int i = 0; i < cols; ++i) {
+                delete[] buffer[i];
+            }
+            delete[] buffer;
+            buffer = nullptr;
+            throw; 
         }
     }
 
-    BufferMatrix(const BufferMatrix& other) : rows(other.rows), cols(other.cols)
+    BufferMatrix(const BufferMatrix& other)
+        : buffer(nullptr), rows(other.rows), cols(other.cols)
     {
         buffer = new T*[cols];
-        for (int i = 0; i < cols; ++i)
-        {
-            buffer[i] = new T[rows];
-            for (int j = 0; j < rows; ++j)
-                buffer[i][j] = other.buffer[i][j];
+        try {
+            for (int i = 0; i < cols; ++i) {
+                buffer[i] = new T[rows];
+                for (int j = 0; j < rows; ++j) {
+                    buffer[i][j] = other.buffer[i][j];
+                }
+            }
+        } catch (...) {
+            for (int i = 0; i < cols; ++i) {
+                delete[] buffer[i];
+            }
+            delete[] buffer;
+            buffer = nullptr;
+            throw;
         }
     }
+
 
     BufferMatrix(BufferMatrix&& other) noexcept
         : buffer(other.buffer), rows(other.rows), cols(other.cols)
@@ -43,26 +62,13 @@ public:
     {
         if (this != &other)
         {
-            if (buffer)
-            {
-                for (int i = 0; i < cols; ++i)
-                    delete[] buffer[i];
-                delete[] buffer;
-            }
-
-            rows = other.rows;
-            cols = other.cols;
-            buffer = new T*[cols];
-            for (int i = 0; i < cols; ++i)
-            {
-                buffer[i] = new T[rows];
-                for (int j = 0; j < rows; ++j)
-                    buffer[i][j] = other.buffer[i][j];
-            }
+            BufferMatrix temp(other);  
+            std::swap(buffer, temp.buffer);
+            std::swap(rows, temp.rows);
+            std::swap(cols, temp.cols);
         }
         return *this;
     }
-
 
     BufferMatrix& operator=(BufferMatrix&& other) noexcept
     {
@@ -86,7 +92,6 @@ public:
         return *this;
     }
 
-
     ~BufferMatrix()
     {
         if (buffer)
@@ -98,8 +103,8 @@ public:
             delete[] buffer;
         }
     }
-
 };
+
 
 
 #endif
