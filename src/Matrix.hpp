@@ -110,7 +110,7 @@ public:
             throw;
         }
 
-        Clear();
+        this->Clear();
         this->buffer = NewBuffer;
         this->cols = newCols;
         this->rows = newRows;
@@ -138,7 +138,7 @@ public:
             throw;
         }
 
-        Clear();
+        this->Clear();
         this->buffer = NewBuffer;
         ++this->cols;
     }
@@ -168,7 +168,7 @@ public:
             throw;
         }
 
-        Clear();
+        this->Clear();
         this->buffer = NewBuffer;
         --this->cols;
     }
@@ -252,6 +252,29 @@ public:
             throw std::out_of_range("Invalid column index");
         return ConstRowProxy(this->buffer[col], this->rows);
     }
+
+    bool operator==(const Matrix& other) const
+    {
+        if (this->rows != other.rows || this->cols != other.cols)
+            return false;
+
+        for (int col = 0; col < this->cols; ++col)
+        {
+            for (int row = 0; row < this->rows; ++row)
+            {
+                if (this->buffer[col][row] != other.buffer[col][row])
+                    return false;
+            }
+        }
+
+        return true;
+    }
+
+    bool operator!=(const Matrix& other) const
+    {
+        return !(*this == other);
+    }
+
 
     bool IsEmpty() const
     {
