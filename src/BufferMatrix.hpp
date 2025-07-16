@@ -77,15 +77,9 @@ public:
     {
         if (this != &other)
         {
-            Clear();
-
-            buffer = other.buffer;
-            rows = other.rows;
-            cols = other.cols;
-
-            other.buffer = nullptr;
-            other.rows = 0;
-            other.cols = 0;
+            std::swap(buffer, other.buffer);
+            std::swap(rows, other.rows);
+            std::swap(cols, other.cols);
         }
         return *this;
     }
